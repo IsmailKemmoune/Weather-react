@@ -1,5 +1,4 @@
-import * as React from "react";
-//import Image from "next/image";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   ChakraProvider,
@@ -13,42 +12,36 @@ import {
   VStack,
   Text,
   HStack,
+  StatHelpText,
 } from "@chakra-ui/react";
 import dayjs from "dayjs";
-
-const weatherData = [
-  {
-    date: new Date("2020-11-30"),
-    temperature: 25,
-  },
-  {
-    date: new Date("2020-12-01"),
-    temperature: 23,
-  },
-  {
-    date: new Date("2020-12-02"),
-    temperature: 10,
-  },
-  {
-    date: new Date("2020-12-03"),
-    temperature: 5,
-  },
-  {
-    date: new Date("2020-12-04"),
-    temperature: 20,
-  },
-  {
-    date: new Date("2020-12-05"),
-    temperature: 15,
-  },
-  {
-    date: new Date("2020-12-06"),
-    temperature: 18, // b7al haka tidir lah bach ticodi ljaw
-  },
-];
+import axios from "axios";
 
 export default function Home() {
-  //code
+  const [city, setCity] = useState("");
+  const onChange = (event) => {
+    setCity(event.target.value);
+  };
+
+  const [weather, setWeather] = useState();
+
+  const findWeather = async () => {
+    const { data: weatherData } = await axios.get(
+      `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=25c4022c54dd549be0edcf5dbfc5c535&units=metric`
+    );
+    const coord = weatherData.city.coord;
+
+    const { data } = await axios.get(
+      `https://api.openweathermap.org/data/2.5/onecall?lat=${coord.lat}&lon=${coord.lon}&exclude=hourly,current&appid=25c4022c54dd549be0edcf5dbfc5c535&units=metric`
+    );
+    setWeather(data.daily.slice(0, 7));
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter") {
+      findWeather();
+    }
+  };
 
   return (
     <ChakraProvider>
@@ -70,6 +63,8 @@ export default function Home() {
                 placeholder="Find your location..."
                 borderRadius="19px"
                 bgColor="white"
+                onChange={onChange}
+                onKeyDown={handleKeyDown}
               />
               <InputRightElement w="130px" h="100%" pr={2}>
                 <Button
@@ -79,6 +74,7 @@ export default function Home() {
                   bgColor="#8E5A49"
                   color="white"
                   _hover={{ bgColor: "#5A4037" }}
+                  onClick={findWeather}
                 >
                   Find
                 </Button>
@@ -86,86 +82,87 @@ export default function Home() {
             </InputGroup>
             <Flex>
               <HStack spacing={0}>
-                {weatherData.map((weather, indx) => {
-                  if (indx === 0)
+                {weather &&
+                  weather.map((ljaw, indx) => {
+                    if (indx === 0)
+                      return (
+                        <Box w="300px" h="340px" mr={10} key={indx}>
+                          <Flex
+                            justifyContent="space-between"
+                            width="full"
+                            padding="16px"
+                            borderRadius="24px 0 0 0"
+                            bgColor="rgba(255, 255, 255, 0.8)"
+                            style={{ backdropFilter: "blur(5px)" }}
+                          >
+                            <Text fontWeight="bold">
+                              {dayjs.unix(ljaw.dt).format("dddd")}
+                            </Text>
+                            <Text>{dayjs.unix(ljaw.dt).format("DD MMM")}</Text>
+                          </Flex>
+                          <Flex
+                            bgColor="rgba(254, 254, 254, 0.5)"
+                            borderRadius="0 0 0 24px"
+                            alignItems="center"
+                            justifyContent="center"
+                            style={{ backdropFilter: "blur(5px)" }}
+                            h="full"
+                          >
+                            <Text
+                              fontSize={48}
+                              color="white"
+                              textShadow="0px 4px 4px rgba(0, 0, 0, 0.25)"
+                            >
+                              {Math.trunc(ljaw.temp.day)}°C
+                            </Text>
+                          </Flex>
+                        </Box>
+                      );
                     return (
-                      <Box w="300px" h="340px" mr={10}>
+                      <Box key={indx} w="130px" h="300px">
                         <Flex
-                          justifyContent="space-between"
+                          justifyContent="center"
                           width="full"
                           padding="16px"
-                          borderRadius="24px 0 0 0"
-                          bgColor="rgba(255, 255, 255, 0.8)"
+                          borderTopRightRadius={
+                            indx === weather.length - 1 ? "24px" : null
+                          }
+                          bgColor={
+                            indx % 2
+                              ? "rgba(255, 255, 255, 0.8)"
+                              : "rgba(200, 200, 200, 0.8)"
+                          }
                           style={{ backdropFilter: "blur(5px)" }}
                         >
                           <Text fontWeight="bold">
-                            {dayjs(weather.date).format("dddd")}
+                            {dayjs.unix(ljaw.dt).format("dddd")}
                           </Text>
-                          <Text>{dayjs(weather.date).format("DD MMM")}</Text>
                         </Flex>
                         <Flex
-                          bgColor="rgba(254, 254, 254, 0.5)"
-                          borderRadius="0 0 0 24px"
+                          borderBottomRightRadius={
+                            indx === weather.length - 1 ? "24px" : null
+                          }
+                          bgColor={
+                            indx % 2
+                              ? "rgba(255, 255, 255, 0.5)"
+                              : "rgba(186, 185, 181, 0.5)"
+                          }
                           alignItems="center"
                           justifyContent="center"
                           style={{ backdropFilter: "blur(5px)" }}
                           h="full"
                         >
                           <Text
-                            fontSize={48}
+                            fontSize={32}
                             color="white"
-                            textShadow="0px 4px 4px rgba(0, 0, 0, 0.25)"
+                            textShadow="0px 4px 4px rgba(0, 0, 0, 0.5)"
                           >
-                            23°C
+                            {Math.trunc(ljaw.temp.day)}°C
                           </Text>
                         </Flex>
                       </Box>
                     );
-                  return (
-                    <Box key={indx} w="130px" h="300px">
-                      <Flex
-                        justifyContent="center"
-                        width="full"
-                        padding="16px"
-                        borderTopRightRadius={
-                          indx === weatherData.length - 1 ? "24px" : null
-                        }
-                        bgColor={
-                          indx % 2
-                            ? "rgba(255, 255, 255, 0.8)"
-                            : "rgba(200, 200, 200, 0.8)"
-                        }
-                        style={{ backdropFilter: "blur(5px)" }}
-                      >
-                        <Text fontWeight="bold">
-                          {dayjs(weather.date).format("dddd")}
-                        </Text>
-                      </Flex>
-                      <Flex
-                        borderBottomRightRadius={
-                          indx === weatherData.length - 1 ? "24px" : null
-                        }
-                        bgColor={
-                          indx % 2
-                            ? "rgba(255, 255, 255, 0.5)"
-                            : "rgba(186, 185, 181, 0.5)"
-                        }
-                        alignItems="center"
-                        justifyContent="center"
-                        style={{ backdropFilter: "blur(5px)" }}
-                        h="full"
-                      >
-                        <Text
-                          fontSize={32}
-                          color="white"
-                          textShadow="0px 4px 4px rgba(0, 0, 0, 0.5)"
-                        >
-                          {weather.temperature}°C
-                        </Text>
-                      </Flex>
-                    </Box>
-                  );
-                })}
+                  })}
               </HStack>
             </Flex>
           </VStack>
